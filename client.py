@@ -24,3 +24,31 @@ if __name__ == "__main__":
     send_request("Hello Server")
     response = receive_response()
     print("Server Response:", response)
+
+def show_categories():
+    send_request("categories")
+    categories = receive_response()
+    print("\nCategories:")
+    for c in categories:
+        print(f"- {c}")
+
+def show_areas():
+    send_request("areas")
+    areas = receive_response()
+    print("\nAreas:")
+    for a in areas:
+        print(f"- {a}")
+
+def show_ingredients():
+    send_request("ingredients")
+    ingredients = receive_response()
+    print("\nIngredients:")
+    for i in ingredients:
+        print(f"- {i}")
+
+if __name__ == "__main__":
+    print(welcome_message)
+
+    show_categories()
+    show_areas()
+    show_ingredients()    
