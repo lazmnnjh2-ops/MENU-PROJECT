@@ -30,7 +30,6 @@ def load_reference_cache():
     r = requests.get(API_CATEGORIES, timeout=10)
     all_cats = [item['strCategory'] for item in r.json()['meals']]
     cache['categories'] = [c for c in all_cats if c in FAMOUS_CATEGORIES]
-    # keep order from FAMOUS_CATEGORIES
     cache['categories'] = [c for c in FAMOUS_CATEGORIES if c in cache['categories']]
 
     cache['areas'] = GCC_AREAS
@@ -143,9 +142,7 @@ def handle_client(client_conn, client_addr):
 
             elif data.lower() == "ingredients":
                 log_event(f"{client_addr} requested ingredients")
-                # Send count first so client knows what to expect
                 payload = json.dumps(reference_cache['ingredients']).encode()
-                # Prefix with 8-byte length header
                 length_header = f"{len(payload):<8}".encode()
                 client_conn.sendall(length_header + payload)
                 log_event(f"{client_addr} received {len(reference_cache['ingredients'])} ingredients ({len(payload)} bytes)")
