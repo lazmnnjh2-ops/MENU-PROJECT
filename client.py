@@ -52,3 +52,31 @@ if __name__ == "__main__":
     show_categories()
     show_areas()
     show_ingredients()    
+
+def search_recipe():
+    name = input("\nEnter recipe name to search: ")
+    if not name:
+        print("No name entered.")
+        return
+    send_request(f"search:{name}")
+    recipes = receive_response()
+    if not recipes:
+        print("No recipes found.")
+        return
+
+    print("\nSearch Results:")
+    for idx, r in enumerate(recipes, start=1):
+        print(f"{idx}. {r['strMeal']} (Category: {r['strCategory']}, Area: {r['strArea']})")
+
+    choice = input("\nEnter recipe number to save (or press Enter to skip): ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(recipes):
+            selected = recipes[choice - 1]
+            send_request(f"save:{json.dumps(selected)}")
+            confirmation = client_socket.recv(1024).decode()
+            print(f"Server Response: {confirmation}")
+        else:
+            print("Invalid choice.")
+    else:
+        print("Skipped saving.")
