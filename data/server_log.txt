@@ -97,3 +97,22 @@
 [2026-05-20 19:15:39] Connection closed: ('127.0.0.1', 60942)
 [2026-05-20 19:15:40] Connection closed: ('127.0.0.1', 60938)
 [2026-05-20 19:15:42] Connection closed: ('127.0.0.1', 60946)
+[2026-05-20 19:45:07] New connection: ('127.0.0.1', 54048)
+[2026-05-20 19:45:16] New connection: ('127.0.0.1', 54052)
+[2026-05-20 19:45:20] New connection: ('127.0.0.1', 49686)
+[2026-05-20 19:45:33] ('127.0.0.1', 54048) requested categories
+[2026-05-20 19:45:49] Connection closed: ('127.0.0.1', 49686)
+[2026-05-20 19:45:51] Error with ('127.0.0.1', 54048): [WinError 10054] An existing connection was forcibly closed by the remote host
+[2026-05-20 19:45:51] Connection closed: ('127.0.0.1', 54048)
+[2026-05-20 19:46:20] New connection: ('127.0.0.1', 60893)
+[2026-05-20 19:46:27] New connection: ('127.0.0.1', 60899)
+[2026-05-20 19:46:34] New connection: ('127.0.0.1', 60905)
+[2026-05-20 19:46:47] ('127.0.0.1', 60905) requested categories
+[2026-05-20 19:46:48] ('127.0.0.1', 60905) requested areas
+[2026-05-20 19:46:51] ('127.0.0.1', 60905) requested ingredients
+[2026-05-20 19:46:51] ('127.0.0.1', 60905) received 882 ingredients (14296 bytes)
+[2026-05-20 19:47:03] ('127.0.0.1', 60905) searched for: pasta
+[2026-05-20 19:47:13] ('127.0.0.1', 60899) requested categories
+[2026-05-20 19:47:15] Connection closed: ('127.0.0.1', 60899)
+[2026-05-20 19:47:16] Connection closed: ('127.0.0.1', 60905)
+[2026-05-20 19:47:17] Connection closed: ('127.0.0.1', 60893)
