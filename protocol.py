@@ -6,7 +6,7 @@ class Message:
 def send_message(sock, data):
     try:
         message = json.dumps(data) +  Message.DELIMITER
-        sock.sendALL(message.encode('uTF-8'))
+        sock.sendall(message.encode('utf-8'))
         return True
     except Exception as e:
       print(f"[protocol Error]Failed to send message: {e}")

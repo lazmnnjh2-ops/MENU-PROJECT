@@ -1,70 +1,47 @@
 import socket
 import json
-from protocol import send_message, recv_message
+import threading
 
 HOST = '127.0.0.1'
 PORT = 5050
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
+welcome = client_socket.recv(1024).decode()
+print(welcome)
 
-welcome_message = client_socket.recv(1024).decode()
-print(f"Server says: {welcome_message}")
+def send_request_async(request, callback=None):
+    def target():
+        try:
+            client_socket.send(request.encode())
+            response = client_socket.recv(8192).decode()
+            if callback:
+                callback(response)
+        except Exception as e:
+            print(f"[Client Error] {e}")
+    threading.Thread(target=target, daemon=True).start()
 
-def send_request(request):
-    send_message(client_socket, request)
+def handle_list_response(data):
+    items = json.loads(data)
+    for i, item in enumerate(items, start=1):
+        print(f"{i}. {item}")
 
-def receive_response():
-    return recv_message(client_socket)
-
-def show_categories():
-    send_request("categories")
-    categories = receive_response()
-    print("\nCategories:")
-    for c in categories:
-        print(f"- {c}")
-
-def show_areas():
-    send_request("areas")
-    areas = receive_response()
-    print("\nAreas:")
-    for a in areas:
-        print(f"- {a}")
-
-def show_ingredients():
-    send_request("ingredients")
-    ingredients = receive_response()
-    print("\nIngredients:")
-    for i in ingredients:
-        print(f"- {i}")
-
-def search_recipe():
-    name = input("\nEnter recipe name to search: ")
-    if not name:
-        print("No name entered.")
-        return
-    send_request(f"search:{name}")
-    recipes = receive_response()
+def handle_search_response(data):
+    recipes = json.loads(data)
     if not recipes:
         print("No recipes found.")
         return
-
-    print("\nSearch Results:")
-    for idx, r in enumerate(recipes, start=1):
-        print(f"{idx}. {r['strMeal']} (Category: {r['strCategory']}, Area: {r['strArea']})")
-
-    choice = input("\nEnter recipe number to save (or press Enter to skip): ")
-    if choice.isdigit():
-        choice = int(choice)
-        if 1 <= choice <= len(recipes):
-            selected = recipes[choice - 1]
-            send_request(f"save:{json.dumps(selected)}")
-            confirmation = client_socket.recv(1024).decode()
-            print(f"Server Response: {confirmation}")
-        else:
-            print("Invalid choice.")
-    else:
-        print("Skipped saving.")
+    for idx, rec in enumerate(recipes, start=1):
+        print(f"{idx}. {rec['strMeal']}")
+    choice = input("Enter number to see details: ")
+    try:
+        sel = recipes[int(choice)-1]
+        print(f"Name: {sel['strMeal']}")
+        print(f"Category: {sel['strCategory']}")
+        print(f"Area: {sel['strArea']}")
+        print(f"Instructions: {sel['strInstructions']}")
+    except:
+        print("Invalid choice.")
 
 def main_menu():
     while True:
@@ -75,23 +52,22 @@ def main_menu():
         print("4. Search Recipe")
         print("5. Quit")
         choice = input("Enter choice: ")
-
         if choice == "1":
-            show_categories()
+            send_request_async("categories", handle_list_response)
         elif choice == "2":
-            show_areas()
+            send_request_async("areas", handle_list_response)
         elif choice == "3":
-            show_ingredients()
+            send_request_async("ingredients", handle_list_response)
         elif choice == "4":
-            search_recipe()
+            name = input("Enter recipe name: ")
+            send_request_async(f"search:{name}", handle_search_response)
         elif choice == "5":
-            send_request("quit")
-            print("Exiting client...")
+            send_request_async("quit")
             break
         else:
-            print("Invalid choice, try again.")
+            print("Invalid choice.")
 
 if __name__ == "__main__":
-    print(welcome_message)
+    print(welcome)
     main_menu()
     client_socket.close()
