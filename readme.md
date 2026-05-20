@@ -41,4 +41,4 @@ python gui.py
 
 ## Links
 - GitHub: `https://github.com/lazmnnjh2-ops/MENU-PROJECT`
-- Demo Video: ``
+- Demo Video: `https://ufile.io/qzw48s2a`
