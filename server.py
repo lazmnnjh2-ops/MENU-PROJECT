@@ -3,6 +3,7 @@ import threading
 import requests
 import json
 import os
+import datetime
 
 DATA_FOLDER = "data"
 if not os.path.exists(DATA_FOLDER):
@@ -10,7 +11,6 @@ if not os.path.exists(DATA_FOLDER):
     print(f"{DATA_FOLDER} folder created")
 else:
     print(f"{DATA_FOLDER} folder already exists")
-
 
 def load_reference_cache():
     cache = {}
@@ -20,10 +20,13 @@ def load_reference_cache():
 
     r = requests.get(API_CATEGORIES)
     cache['categories'] = [item['strCategory'] for item in r.json()['meals']]
+
     r = requests.get(API_AREAS)
     cache['areas'] = [item['strArea'] for item in r.json()['meals']]
+
     r = requests.get(API_INGREDIENTS)
     cache['ingredients'] = [item['strIngredient'] for item in r.json()['meals']]
+
     with open(f"{DATA_FOLDER}/reference_GroupX.json", "w") as f:
         json.dump({
             "categories": cache['categories'],
@@ -36,19 +39,25 @@ def load_reference_cache():
 
 reference_cache = load_reference_cache()
 
-HOST = '0.0.0.0'
-PORT = 5050
+LOG_FILE = f"{DATA_FOLDER}/server_log.txt"
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(5)
-print(f"Server listening on {HOST}:{PORT}")
+def log_event(message):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"[{timestamp}] {message}\n"
+    print(entry, end="")
+    with open(LOG_FILE, "a") as f:
+        f.write(entry)
 
 def search_recipe_by_name(name):
     results = []
     for cat in reference_cache['categories']:
         if name.lower() in cat.lower():
-            results.append({"strMeal": cat, "strCategory": cat, "strArea": "Unknown", "strInstructions": "Check API"})
+            results.append({
+                "strMeal": cat,
+                "strCategory": cat,
+                "strArea": "Unknown",
+                "strInstructions": "Check API"
+            })
     return results
 
 def save_recipe(recipe):
@@ -60,37 +69,62 @@ def save_recipe(recipe):
         data = json.load(f)
         data.append(recipe)
         f.seek(0)
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
+
+HOST = '0.0.0.0'
+PORT = 5050
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen(5)
+print(f"Server listening on {HOST}:{PORT}")
 
 def handle_client(client_conn, client_addr):
-    print(f"New connection: {client_addr}")
+    log_event(f"New connection: {client_addr}")
     client_conn.send(b"Welcome to Recipe Discovery!\n")
+
     while True:
-        data = client_conn.recv(8192).decode()
-        if not data or data.lower() == "quit":
+        try:
+            data = client_conn.recv(8192).decode()
+            if not data:
+                break
+
+            if data.lower() == "quit":
+                break
+
+            elif data.lower() == "categories":
+                log_event(f"{client_addr} requested categories")
+                client_conn.send(json.dumps(reference_cache['categories']).encode())
+
+            elif data.lower() == "areas":
+                log_event(f"{client_addr} requested areas")
+                client_conn.send(json.dumps(reference_cache['areas']).encode())
+
+            elif data.lower() == "ingredients":
+                log_event(f"{client_addr} requested ingredients")
+                client_conn.send(json.dumps(reference_cache['ingredients']).encode())
+
+            elif data.startswith("search:"):
+                name = data.split("search:")[1]
+                recipes = search_recipe_by_name(name)
+                log_event(f"{client_addr} searched for: {name}")
+                client_conn.send(json.dumps(recipes).encode())
+
+            elif data.startswith("save:"):
+                recipe_json = json.loads(data.split("save:")[1])
+                save_recipe(recipe_json)
+                log_event(f"{client_addr} saved recipe: {recipe_json['strMeal']}")
+                client_conn.send(b"Saved")
+
+            else:
+                client_conn.send(b"Unknown command")
+
+        except Exception as e:
+            log_event(f"Error with {client_addr}: {e}")
             break
 
-        if data.startswith("search:"):
-            name = data.split("search:")[1]
-            recipes = search_recipe_by_name(name)
-            client_conn.send(json.dumps(recipes).encode())
-
-        elif data.startswith("save:"):
-            recipe_json = json.loads(data.split("save:")[1])
-            save_recipe(recipe_json)
-            client_conn.send(b"Saved")
-
-        elif data == "categories":
-            client_conn.send(json.dumps(reference_cache['categories']).encode())
-
-        elif data == "areas":
-            client_conn.send(json.dumps(reference_cache['areas']).encode())
-
-        elif data == "ingredients":
-            client_conn.send(json.dumps(reference_cache['ingredients']).encode())
-
     client_conn.close()
-    print(f"Connection closed: {client_addr}")
+    log_event(f"Connection closed: {client_addr}")
 
 while True:
     client_conn, client_addr = server_socket.accept()
